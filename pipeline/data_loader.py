@@ -13,7 +13,7 @@ class DataLoader:
             "original_df": None,
             "file_name": None,
             "file_sig": None,
-            "history": [],  # undo stack of DataFrame snapshots
+            "history": [],
         }
         for key, value in defaults.items():
             if key not in st.session_state:
@@ -23,7 +23,6 @@ class DataLoader:
         """Return the current DataFrame."""
         return st.session_state.df
 
-    # ------------------------------------------------------------------ reading
     @staticmethod
     def _clean_columns(df: pd.DataFrame) -> pd.DataFrame:
         """Make column names strings, strip spaces, and de-duplicate."""
@@ -50,7 +49,7 @@ class DataLoader:
                 try:
                     uploaded_file.seek(0)
                     df = pd.read_csv(uploaded_file, encoding=enc)
-                    if df.shape[1] == 1:  # maybe ; or tab separated
+                    if df.shape[1] == 1:
                         uploaded_file.seek(0)
                         alt = pd.read_csv(uploaded_file, encoding=enc, sep=None, engine="python")
                         if alt.shape[1] > 1:
@@ -74,9 +73,8 @@ class DataLoader:
             return pd.read_parquet(uploaded_file)
         raise ValueError(f"Unsupported file type: {uploaded_file.name}")
 
-    # ------------------------------------------------------------------ UI
     def render_upload_ui(self):
-        st.header("📂 Upload Dataset")
+        st.header(" Upload Dataset")
 
         uploaded_file = st.file_uploader(
             "Upload Dataset File",
@@ -92,7 +90,7 @@ class DataLoader:
                     sheets = pd.ExcelFile(uploaded_file).sheet_names
                     uploaded_file.seek(0)
                 except Exception as e:
-                    st.error(f"❌ Could not open Excel file: {e}")
+                    st.error(f" Could not open Excel file: {e}")
                     return
                 if len(sheets) > 1:
                     sheet = st.selectbox("Select Sheet", sheets, key="excel_sheet")
@@ -104,11 +102,11 @@ class DataLoader:
                 try:
                     df = self._read_file(uploaded_file, sheet)
                 except Exception as e:
-                    st.error(f"❌ Could not read file: {e}")
+                    st.error(f" Could not read file: {e}")
                     return
 
                 if df is None or df.shape[0] == 0 or df.shape[1] == 0:
-                    st.error("❌ The file is empty — no rows or columns were found.")
+                    st.error(" The file is empty — no rows or columns were found.")
                     return
 
                 df = self._clean_columns(df)
@@ -119,14 +117,13 @@ class DataLoader:
                 st.session_state.report_items = []
                 st.session_state.history = []
                 clear_ml_state()
-                st.success(f"🎉 '{uploaded_file.name}' loaded — {df.shape[0]:,} rows × {df.shape[1]} columns.")
-
+                
         if st.session_state.df is not None:
             st.divider()
 
             top_c1, top_c2, top_c3 = st.columns([2, 1, 1])
             with top_c1:
-                st.subheader("📋 Dataset Viewer")
+                st.subheader(" Dataset Viewer")
             with top_c2:
                 if ui_button("↩️ Undo Last Change", disabled=not st.session_state.history, key="btn_undo"):
                     if st.session_state.history:
@@ -134,12 +131,12 @@ class DataLoader:
                         flash("↩️ Reverted last change.")
                         st.rerun()
             with top_c3:
-                if ui_button("🔄 Reset to Original", disabled=st.session_state.original_df is None,
+                if ui_button(" Reset to Original", disabled=st.session_state.original_df is None,
                              key="btn_reset"):
                     st.session_state.df = st.session_state.original_df.copy()
                     st.session_state.history = []
                     clear_ml_state()
-                    flash("🔄 Dataset reset to the original upload.")
+                    flash(" Dataset reset to the original upload.")
                     st.rerun()
 
             ui_dataframe(st.session_state.df, height=500)
@@ -147,7 +144,7 @@ class DataLoader:
             csv_data = st.session_state.df.to_csv(index=False).encode("utf-8")
             base_name = (st.session_state.file_name or "dataset").rsplit(".", 1)[0]
             ui_download(
-                "📥 Download Current Dataset (CSV)",
+                " Download Current Dataset (CSV)",
                 data=csv_data,
                 file_name=f"processed_{base_name}.csv",
                 mime="text/csv",
