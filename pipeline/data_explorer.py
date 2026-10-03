@@ -11,12 +11,12 @@ class DataExplorerEngine:
         self.df = df
 
     def render_explorer_interface(self):
-        st.subheader("🔍 Interactive Data Explorer")
+        st.subheader("Data Explorer")
         st.markdown("---")
 
         n_rows = len(self.df)
         if n_rows == 0 or self.df.shape[1] == 0:
-            st.warning("⚠️ The dataset is empty.")
+            st.warning("️ The dataset is empty.")
             return
 
         template = chart_template()
@@ -31,7 +31,7 @@ class DataExplorerEngine:
 
         st.markdown("---")
 
-        st.subheader("📋 Dataset Preview")
+        st.subheader(" Dataset Preview")
         if n_rows <= 5:
             rows_to_show = n_rows
         else:
@@ -39,10 +39,10 @@ class DataExplorerEngine:
                                      value=min(10, n_rows), key="exp_rows")
         ui_dataframe(self.df.head(rows_to_show))
 
-        st.subheader("📑 Column Summary & Data Types")
+        st.subheader(" Column Summary & Data Types")
         try:
             nunique = self.df.nunique()
-        except TypeError:  # unhashable cells
+        except TypeError:
             nunique = self.df.astype(str).nunique()
         col_summary = pd.DataFrame({
             "Data Type": self.df.dtypes.astype(str),
@@ -60,10 +60,10 @@ class DataExplorerEngine:
             },
         )
 
-        st.subheader("📊 Statistical Summary")
+        st.subheader(" Statistical Summary")
         tab1, tab2, tab3, tab4 = st.tabs([
-            "🔢 Numerical Columns", "🔤 Categorical Columns",
-            "🔥 Correlation Heatmap", "📈 Column Distribution",
+            " Numerical Columns", " Categorical Columns",
+            " Correlation Heatmap", " Column Distribution",
         ])
 
         with tab1:
@@ -127,4 +127,4 @@ class DataExplorerEngine:
                                  title=f"Top values in {selected_col}", template=template)
                     ui_plot(fig, key="exp_bar")
             except Exception as e:
-                st.error(f"❌ Could not draw this chart: {e}")
+                st.error(f" Could not draw this chart: {e}")
