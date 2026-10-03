@@ -101,10 +101,6 @@ button[data-baseweb="tab"][aria-selected="true"], button[data-baseweb="tab"][ari
 div[data-baseweb="tab-highlight"] { background-color: var(--accent) !important; }
 div[data-baseweb="tab-border"] { background-color: var(--border) !important; }
 
-/* Section selector (persistent tabs) */
-div[data-testid="stRadio"] div[role="radiogroup"][aria-orientation="horizontal"],
-div[data-testid="stRadio"] > div[role="radiogroup"] { gap: 6px; flex-wrap: wrap; }
-
 /* Metrics */
 div[data-testid="stMetric"] { background: var(--card); border: 1px solid var(--border);
   border-radius: 12px; padding: 12px 16px; transition: transform .2s ease, box-shadow .2s ease; }
