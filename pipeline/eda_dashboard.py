@@ -9,15 +9,15 @@ from pipeline.theme import (
 )
 from pipeline.utils import column_groups, ui_dataframe, ui_download, ui_plot
 
-try:  # needed only for OLS trendlines
-    import statsmodels  # noqa: F401
+try:
+    import statsmodels
     HAS_STATSMODELS = True
-except Exception:  # pragma: no cover
+except Exception:
     HAS_STATSMODELS = False
 
 MAX_PLOT_POINTS = 20000
-THEME_PALETTE = "🎨 App Theme Colors"
-CUSTOM_PALETTE = "✏️ Custom Colors"
+THEME_PALETTE = " App Theme Colors"
+CUSTOM_PALETTE = "️ Custom Colors"
 
 
 def _sample(df: pd.DataFrame, n: int = MAX_PLOT_POINTS) -> pd.DataFrame:
@@ -35,10 +35,9 @@ class PowerBIDashboardEngine:
         self.df = df
         self.kd, self.kc, self.kb = {}, {}, {}
 
-    # ------------------------------------------------------------------ colour studio
     def _render_color_studio(self):
         theme = get_theme()
-        with st.expander("🎨 Chart Color Studio — choose palette, scale & style", expanded=False):
+        with st.expander("  Choose palette, scale & style", expanded=False):
             c1, c2, c3 = st.columns(3)
             with c1:
                 palette_name = st.selectbox(
@@ -85,14 +84,13 @@ class PowerBIDashboardEngine:
             fig = builder()
             ui_plot(fig, key=key)
         except Exception as ex:
-            st.error(f"❌ Could not draw this chart: {ex}")
+            st.error(f" Could not draw this chart: {ex}")
 
-    # ------------------------------------------------------------------ main page
     def render_dashboard(self):
-        st.title("📊 Enterprise Exploratory Data Analysis (EDA) Studio")
+        st.title(" Enterprise Exploratory Data Analysis ")
 
         if self.df is None or self.df.empty:
-            st.error("⚠️ Please Upload Dataset")
+            st.error("️ Please Upload Dataset")
             return
 
         self._render_color_studio()
@@ -102,7 +100,6 @@ class PowerBIDashboardEngine:
         num_cols, cat_cols, dt_cols = column_groups(full_df)
         all_cols = full_df.columns.tolist()
 
-        # ---------------- slicers
         slicer_c1, slicer_c2 = st.columns(2)
         with slicer_c1:
             if cat_cols:
@@ -143,10 +140,9 @@ class PowerBIDashboardEngine:
         st.divider()
 
         if filtered_df.empty:
-            st.warning("⚠️ The current filters leave no rows. Widen the filters to see charts.")
+            st.warning("️ The current filters leave no rows. Widen the filters to see charts.")
             return
 
-        # ---------------- KPI cards
         kpi = st.columns(4)
         cards = [
             ("Active Rows", f"{len(filtered_df):,}"),
@@ -165,8 +161,8 @@ class PowerBIDashboardEngine:
         st.divider()
 
         tab_uni, tab_bi, tab_multi, tab_outlier, tab_missing, tab_custom = st.tabs([
-            "🟢 Univariate EDA", "🟡 Bivariate EDA", "🔵 Multivariate EDA",
-            "📦 Outliers & Skewness", "🕳️ Missing Value Matrix", "🎨 All Custom Studio",
+            " Univariate EDA", " Bivariate EDA", " Multivariate EDA",
+            " Outliers & Skewness", "️ Missing Value Matrix", " All Custom Studio",
         ])
 
         with tab_uni:
@@ -183,18 +179,17 @@ class PowerBIDashboardEngine:
             self._tab_custom(filtered_df, all_cols, num_cols)
 
         st.divider()
-        st.markdown("### 📥 Export Processed Dataset")
+        st.markdown("###  Export Processed Dataset")
         ui_download(
-            label="📄 Download Active Dataset (CSV)",
+            label=" Download Active Dataset (CSV)",
             data=filtered_df.to_csv(index=False).encode("utf-8"),
             file_name="autodatalab_eda_export.csv",
             mime="text/csv",
             key="dl_eda_csv",
         )
 
-    # ------------------------------------------------------------------ tabs
     def _tab_univariate(self, df, num_cols, cat_cols):
-        st.subheader("🟢 Single Variable Distribution & Frequency Analysis")
+        st.subheader(" Single Variable Distribution & Frequency Analysis")
         feature_type = st.radio("Select Feature Type", ["Numerical", "Categorical"], horizontal=True, key="uni_type")
 
         if feature_type == "Numerical":
@@ -228,7 +223,7 @@ class PowerBIDashboardEngine:
             try:
                 counts = df[sel].astype(str).where(df[sel].notna()).value_counts().head(top_n).reset_index()
             except Exception as ex:
-                st.error(f"❌ Cannot count this column: {ex}")
+                st.error(f" Cannot count this column: {ex}")
                 return
             counts.columns = [sel, "Count"]
             c1, c2 = st.columns(2)
@@ -240,7 +235,7 @@ class PowerBIDashboardEngine:
                                           title=f"Distribution Pie Chart for {sel}", **self.kd), "uni_pie")
 
     def _tab_bivariate(self, df, num_cols, cat_cols):
-        st.subheader("🟡 Two-Variable Relationship Analysis")
+        st.subheader(" Two-Variable Relationship Analysis")
         mode = st.selectbox("Select Relationship Combination",
                             ["Numerical vs Numerical", "Categorical vs Numerical", "Categorical vs Categorical"],
                             key="bi_mode_sel")
@@ -313,8 +308,8 @@ class PowerBIDashboardEngine:
             ui_dataframe(pd.crosstab(sub[cat1], sub[cat2]))
 
     def _tab_multivariate(self, df, num_cols, cat_cols, all_cols):
-        st.subheader("🔵 Complex Multi-Feature Relationships")
-        m1, m2, m3 = st.tabs(["🔥 Correlation Matrix", "🌌 3D Scatter Plot", "🕸️ Pairwise Matrix"])
+        st.subheader(" Complex Multi-Feature Relationships")
+        m1, m2, m3 = st.tabs([" Correlation Matrix", " 3D Scatter Plot", "️ Pairwise Matrix"])
 
         with m1:
             if len(num_cols) >= 2:
@@ -363,7 +358,7 @@ class PowerBIDashboardEngine:
                 st.info("Need at least 2 columns for a scatter matrix.")
 
     def _tab_outliers(self, df, num_cols):
-        st.subheader("📦 Statistical Anomalies & Distribution Shapes")
+        st.subheader(" Statistical Anomalies & Distribution Shapes")
         if not num_cols:
             st.info("No numeric columns in the dataset.")
             return
@@ -379,7 +374,7 @@ class PowerBIDashboardEngine:
 
         c1, c2 = st.columns(2)
         with c1:
-            st.markdown("##### 📏 Statistical Metrics")
+            st.markdown("#####  Statistical Metrics")
             st.write(f"**Skewness Score:** `{data.skew():.3f}`")
             st.write(f"**Kurtosis Score:** `{data.kurt():.3f}`")
             st.write(f"**Lower Bound (IQR 1.5):** `{lower_b:.2f}`")
@@ -391,9 +386,9 @@ class PowerBIDashboardEngine:
                        "out_box")
 
     def _tab_missing(self, df):
-        st.subheader("🕳️ Missing Value Matrix")
+        st.subheader("️ Missing Value Matrix")
         if df.isnull().sum().sum() == 0:
-            st.success("🎉 No missing values in the current view!")
+            st.success(" No missing values in the current view!")
             return
         view = df
         if len(view) > 1500:
@@ -419,12 +414,12 @@ class PowerBIDashboardEngine:
                                   **self.kd), "miss_bar")
 
     def _tab_custom(self, df, all_cols, num_cols):
-        st.subheader("🎨 Custom Dynamic Plotting Engine")
+        st.subheader(" Custom Dynamic Plotting Engine")
         agg_funcs = {"None (raw values)": None, "Mean": "mean", "Sum": "sum", "Median": "median",
                      "Min": "min", "Max": "max", "Count": "count"}
 
         def canvas(panel_id: str):
-            with st.expander(f"⚙️ Custom Chart Setup ({panel_id.upper()})", expanded=True):
+            with st.expander(f"️ Custom Chart Setup ({panel_id.upper()})", expanded=True):
                 v_type = st.selectbox(
                     "Chart Type",
                     ["Bar Chart", "Line Chart", "Scatter Plot", "Pie Chart", "Donut Chart", "Box Plot", "Histogram",
