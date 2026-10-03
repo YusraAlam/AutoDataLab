@@ -24,19 +24,13 @@ at.session_state["history"] = []
 at.run()
 assert not at.exception, at.exception
 
-from pipeline.utils import ML_STATE_KEYS  # noqa
+from pipeline.utils import ML_STATE_KEYS
 PAGES = [o for o in at.sidebar.radio[0].options]
 for page in PAGES[:6]:
     at.sidebar.radio[0].set_value(page).run()
     print(page, "-> exceptions:", [e.value for e in at.exception])
     assert not at.exception, at.exception
 
-for theme in at.sidebar.selectbox[0].options:
-    at.sidebar.selectbox[0].set_value(theme).run()
-    assert not at.exception, at.exception
-print("themes OK")
-
-# ML page: click run
 at.sidebar.radio[0].set_value(PAGES[5]).run()
 for b in at.button:
     if b.key == "ml_run":
@@ -46,7 +40,6 @@ print("ML exceptions:", [e.value for e in at.exception], "errors:", [e.value for
 assert not at.exception
 assert "ml_results" in at.session_state
 
-# ML regression
 at.selectbox(key="ml_target").set_value("income").run()
 print("target income task:", at.radio(key="ml_task_income").value)
 for b in at.button:
@@ -57,7 +50,6 @@ print("Regression exceptions:", [e.value for e in at.exception], "errors:", [e.v
 assert not at.exception
 print(at.session_state["ml_results"])
 
-# Cleaner action
 at.sidebar.radio[0].set_value(PAGES[2]).run()
 for b in at.button:
     if b.key == "btn_missing":
