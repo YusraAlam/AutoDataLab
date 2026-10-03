@@ -86,14 +86,13 @@ class AutoMLEngine:
     def __init__(self, df: pd.DataFrame):
         self.df = df
 
-    # ------------------------------------------------------------------ preprocessing
     def preprocess_data(self, target_col: str, task_type: str):
         """Clean, encode, split and scale. Scaling is fitted on the TRAIN split only (no leakage).
         Returns a dict, or None after showing an error."""
         df = self.df.replace([np.inf, -np.inf], np.nan)
         df = df.dropna(subset=[target_col])
         if len(df) < 10:
-            st.error("❌ Need at least 10 rows with a non-missing target.")
+            st.error(" Need at least 10 rows with a non-missing target.")
             return None
 
         label_encoder, class_names = None, None
@@ -104,11 +103,11 @@ class AutoMLEngine:
             keep = y_num.notna()
             df, y = df[keep], y_num[keep].astype("float64").to_numpy()
             if len(y) < 10:
-                st.error(f"❌ Target column **'{target_col}'** has too few numeric values for regression.")
+                st.error(f" Target column **'{target_col}'** has too few numeric values for regression.")
                 return None
         else:
             if y_raw.nunique() < 2:
-                st.error("❌ The target has only one class — classification needs at least 2.")
+                st.error(" The target has only one class — classification needs at least 2.")
                 return None
             label_encoder = LabelEncoder()
             try:
@@ -117,12 +116,11 @@ class AutoMLEngine:
                 y = label_encoder.fit_transform(y_raw.astype(str))
             class_names = [str(c) for c in label_encoder.classes_]
             if len(class_names) > MODEL_CLASS_LIMIT_WARN:
-                st.warning(f"⚠️ Target has {len(class_names)} classes — did you mean Regression?")
+                st.warning(f"️ Target has {len(class_names)} classes — did you mean Regression?")
 
         X = df.drop(columns=[target_col])
         notes = []
 
-        # Drop columns that cannot help or would explode the feature space
         num_cols, cat_cols, dt_cols = column_groups(X)
         drop = {}
         for c in dt_cols:
@@ -147,7 +145,7 @@ class AutoMLEngine:
             notes.extend(f"`{c}` dropped: {why}" for c, why in drop.items())
         cat_cols = [c for c in cat_cols if c in X.columns]
         if X.shape[1] == 0:
-            st.error("❌ No usable feature columns remain after cleaning.")
+            st.error(" No usable feature columns remain after cleaning.")
             return None
 
         input_columns = X.columns.tolist()
@@ -155,7 +153,6 @@ class AutoMLEngine:
         X = X.apply(pd.to_numeric, errors="coerce").astype("float64")
         X = X.replace([np.inf, -np.inf], np.nan)
 
-        # Split first, then impute/scale using training statistics only
         stratify = None
         if task_type == "Classification":
             counts = np.bincount(y)
@@ -181,7 +178,6 @@ class AutoMLEngine:
             "input_columns": input_columns, "cat_cols": cat_cols, "notes": notes,
         }
 
-    # ------------------------------------------------------------------ training
     @staticmethod
     def _fit_one(name, factory, task_type, deep, cv_folds, X_tr, y_tr):
         model = factory()
@@ -220,20 +216,18 @@ class AutoMLEngine:
             "Time (s)": round(seconds, 2),
         }
 
-    # ------------------------------------------------------------------ UI
     def render_studio(self):
-        st.title("🤖 Enterprise AutoML & Fast Benchmarking Studio")
+        st.title(" Enterprise AutoML & Fast Benchmarking Studio")
 
         if self.df is None or self.df.empty:
-            st.error("⚠️ Please Upload Dataset")
+            st.error("️ Please Upload Dataset")
             return
 
-        # Drop stale results when the dataset changed
         if st.session_state.get("ml_source_file") not in (None, st.session_state.get("file_name")):
             clear_ml_state()
 
         all_cols = self.df.columns.tolist()
-        st.subheader("🎯 Choose Target Column")
+        st.subheader(" Choose Target Column")
         col_t1, col_t2 = st.columns(2)
         with col_t1:
             target_col = st.selectbox("Select Target Variable (Y)", all_cols, key="ml_target")
@@ -251,7 +245,7 @@ class AutoMLEngine:
                                  key=f"ml_task_{target_col}")
 
         st.divider()
-        st.subheader("⚡ Choose Model")
+        st.subheader(" Choose Model")
         factories = CLASSIFIERS if task_type == "Classification" else REGRESSORS
         selected = st.multiselect(
             "Select multiple models for comparison", options=list(factories.keys()),
@@ -259,7 +253,7 @@ class AutoMLEngine:
 
         col_opt1, col_opt2 = st.columns(2)
         with col_opt1:
-            speed_mode = st.radio("⚡ Execution Speed Mode",
+            speed_mode = st.radio(" Execution Speed Mode",
                                   ["Fast Mode (Quick Benchmarking)", "Deep Search (Hyperparameter Tuning)"],
                                   index=0, key="ml_speed")
         deep = speed_mode.startswith("Deep")
@@ -270,9 +264,9 @@ class AutoMLEngine:
 
         st.divider()
 
-        if ui_button("🚀 Run AutoML Pipeline", key="ml_run"):
+        if ui_button(" Run AutoML Pipeline", key="ml_run"):
             if not selected:
-                st.warning("⚠️ Select at least one model.")
+                st.warning("️ Select at least one model.")
             else:
                 self._run_pipeline(target_col, task_type, selected, factories, deep, cv_folds)
 
@@ -307,7 +301,7 @@ class AutoMLEngine:
 
         for i, name in enumerate(selected):
             progress.progress(i / len(selected))
-            status.markdown(f"⏳ **Training ({i + 1}/{len(selected)}):** `{name}`...")
+            status.markdown(f" **Training ({i + 1}/{len(selected)}):** `{name}`...")
             t0 = time.time()
             try:
                 X_fit, y_fit = (subsample(X_tr, y_tr, SVM_ROW_CAP) if "SV" in name else (X_tr, y_tr))
@@ -327,7 +321,7 @@ class AutoMLEngine:
         status.empty()
 
         if not results:
-            st.error("❌ Every selected model failed to train.\n\n" + "\n".join(f"- {f}" for f in failures))
+            st.error(" Every selected model failed to train.\n\n" + "\n".join(f"- {f}" for f in failures))
             return
 
         sort_col = "Accuracy" if task_type == "Classification" else "R² Score"
@@ -369,25 +363,25 @@ class AutoMLEngine:
         res_df, sort_col, task_type = ss.ml_results, ss.ml_sort_col, ss.ml_task_type
         theme = get_theme()
 
-        st.success(f"✅ Training completed in **{ss.ml_elapsed} seconds**!")
+        st.success(f" Training completed in **{ss.ml_elapsed} seconds**!")
         for note in ss.get("ml_notes", []):
             st.caption(f"ℹ️ {note}")
 
-        st.subheader("🏆 Leaderboard Benchmark Results")
+        st.subheader(" Leaderboard Benchmark Results")
         ui_dataframe(res_df)
 
         fig = px.bar(res_df, x="Model", y=sort_col, color=sort_col, text_auto=True,
-                     color_continuous_scale=theme["scale"], title=f"📊 Performance Comparison ({sort_col})",
+                     color_continuous_scale=theme["scale"], title=f" Performance Comparison ({sort_col})",
                      template=chart_template())
         ui_plot(fig, key="ml_comp_fig")
 
         best = res_df.iloc[0]
-        st.success(f"🥇 **Best Model:** `{ss.ml_best_name}` ({sort_col}: **{best[sort_col]}**)")
+        st.success(f" **Best Model:** `{ss.ml_best_name}` ({sort_col}: **{best[sort_col]}**)")
 
         self._render_diagnostics(ss.ml_best_name, ss.ml_best_model, *ss.ml_test_data, task_type)
 
         ui_download(
-            f"📥 Download Best Model ({ss.ml_best_name}) as .joblib",
+            f" Download Best Model ({ss.ml_best_name}) as .joblib",
             data=ss.ml_model_bytes,
             file_name=f"{ss.ml_best_name.replace(' ', '_').replace('(', '').replace(')', '').lower()}_model.joblib",
             mime="application/octet-stream", key="ml_dl_model",
@@ -408,7 +402,7 @@ class AutoMLEngine:
 
     def _render_diagnostics(self, name, model, X_test, y_test, task_type):
         st.divider()
-        st.subheader(f"🔬 Diagnostics — {name}")
+        st.subheader(f" Diagnostics — {name}")
         theme, template = get_theme(), chart_template()
         feat_names = st.session_state.ml_feature_names
         c1, c2 = st.columns(2)
@@ -455,7 +449,7 @@ class AutoMLEngine:
 
     def _render_prediction_tab(self):
         ss = st.session_state
-        st.subheader("🔮 Predict on New Data")
+        st.subheader(" Predict on New Data")
         st.caption("Upload a CSV with the same feature columns (the target column is optional and ignored).")
         new_file = st.file_uploader("Upload CSV for Prediction", type=["csv"], key="ml_predict_upload")
         if new_file is None:
@@ -471,7 +465,7 @@ class AutoMLEngine:
 
             missing = [c for c in ss.ml_input_columns if c not in new_df.columns]
             if missing:
-                st.error("❌ Missing required column(s): " + ", ".join(f"`{c}`" for c in missing))
+                st.error(" Missing required column(s): " + ", ".join(f"`{c}`" for c in missing))
                 return
 
             X_new = new_df[ss.ml_input_columns].replace([np.inf, -np.inf], np.nan)
@@ -487,10 +481,9 @@ class AutoMLEngine:
             result_df = new_df.copy()
             result_df[f"Predicted_{ss.ml_target_col}"] = preds
             ui_dataframe(result_df)
-            ui_download("📥 Download Predictions (CSV)", data=result_df.to_csv(index=False).encode("utf-8"),
+            ui_download(" Download Predictions (CSV)", data=result_df.to_csv(index=False).encode("utf-8"),
                         file_name="predictions.csv", mime="text/csv", key="ml_dl_preds")
         except Exception as e:
-            st.error(f"❌ Prediction failed: {e}")
+            st.error(f" Prediction failed: {e}")
 
-    # Alias for compatibility with app.py
     render_ml_interface = render_studio
